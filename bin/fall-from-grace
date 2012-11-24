@@ -1,0 +1,186 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+#
+# Copyright (c) 2010-2011 Björn Edström <be@bjrn.se>
+# See LICENSE for details.
+
+import daemon
+import lockfile
+import logging
+import logging.handlers
+import optparse
+import psutil
+import sys
+import time
+import functools
+import signal
+import os
+import fcntl
+import json
+import re
+
+log = logging.getLogger('fall-from-grace')
+
+
+class Monitor(object):
+    def __init__(self):
+        self.name = None
+        self.cmdline = None
+        self.actions = None
+
+
+class FallFromGrace(object):
+    def __init__(self, options, args):
+        self.options = options
+        self.args = args
+        self.running = True
+        self.monitor = []
+
+    def _read_conf(self):
+        try:
+            conf = json.loads(file('/etc/fall-from-grace.conf', 'r').read())
+        except Exception, e:
+            log.error('failed to read config file: %s', e)
+            return
+        for name, monitor_conf in conf['monitor'].iteritems():
+            m = Monitor()
+            m.name = name
+            m.cmdline = re.compile(monitor_conf['cmdline'])
+            m.actions = monitor_conf['actions']
+            self.monitor.append(m)
+
+    def _act(self, proc, monitor):
+        #log.debug('proc %s monitor %s', proc, monitor)
+
+        rmem, vmem = proc.get_memory_info()
+
+        def evaluate(rule):
+            tokens = rule.split()
+            new = []
+            for tok in tokens:
+                val = tok
+                if val == 'rmem':
+                    val = rmem
+                elif val == 'vmem':
+                    val = vmem
+                new.append(val)
+            if not len(new) == 3:
+                return False
+            #log.debug('new: %s', new)
+            if new[1] == '>':
+                return new[0] > int(new[2])
+
+        for trigger, action in monitor.actions.iteritems():
+            eret = evaluate(trigger)
+            if eret:
+                log.info('Monitor %s and %s hit, action: %s', monitor.name, trigger, action)
+                if action == 'term':
+                    os.kill(proc.pid, signal.SIGTERM)
+
+    def run(self):
+        log.info('starting up fall-from-grace')
+        self._read_conf()
+
+        while self.running:
+            # TODO (bjorn): Optimize
+            for proc in psutil.get_process_list():
+                cmdline = ' '.join(proc.cmdline)
+                for monitor in self.monitor:
+                    if monitor.cmdline.search(cmdline):
+                        self._act(proc, monitor)
+            time.sleep(10)
+
+    def shutdown(self, *args):
+        log.info('shutting down')
+        self.running = False
+
+    def reload(self, *args):
+        log.info('reloading')
+        self._read_conf()
+
+
+def configure_logging(options):
+    log.setLevel(logging.DEBUG)
+    if options.daemon:
+        handler = logging.handlers.SysLogHandler(address='/dev/log')
+        formatter = logging.Formatter('%(name)s[%(process)s]: %(levelname)s - %(message)s')
+        handler.setFormatter(formatter)
+    else:
+        handler = logging.StreamHandler()
+    log.addHandler(handler)
+
+
+def run_as_daemon(ffg):
+    home = '/var/lib/fall-from-grace'
+    if not os.path.exists(home):
+        os.mkdir(home)
+
+    class PidFile(object):
+        """Context manager that locks a pid file.  Implemented as class
+        not generator because daemon.py is calling .__exit__() with no parameters
+        instead of the None, None, None specified by PEP-343."""
+        # pylint: disable=R0903
+
+        def __init__(self, path):
+            self.path = path
+            self.pidfile = None
+
+        def __enter__(self):
+            self.pidfile = open(self.path, "a+")
+            try:
+                fcntl.flock(self.pidfile.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except IOError:
+                raise SystemExit("Already running according to " + self.path)
+            self.pidfile.seek(0)
+            self.pidfile.truncate()
+            self.pidfile.write(str(os.getpid()))
+            self.pidfile.flush()
+            self.pidfile.seek(0)
+            return self.pidfile
+
+        def __exit__(self, exc_type=None, exc_value=None, exc_tb=None):
+            try:
+                self.pidfile.close()
+            except IOError as err:
+                # ok if file was just closed elsewhere
+                if err.errno != 9:
+                    raise
+            os.remove(self.path)
+
+    context = daemon.DaemonContext(
+        working_directory='/var/lib/fall-from-grace',
+        umask=0o002,
+        pidfile=PidFile('/var/run/fall-from-grace.pid'),
+    )
+    context.signal_map = {
+        signal.SIGTERM: functools.partial(FallFromGrace.shutdown, ffg),
+        signal.SIGHUP: functools.partial(FallFromGrace.reload, ffg),
+    }
+    with context:
+        ffg.run()
+
+
+def run(ffg):
+    ffg.run()
+
+
+def main():
+    parser = optparse.OptionParser(
+        usage='usage: %prog [options]')
+    parser.add_option('-d', '--daemon', action='store_true', default=False, dest='daemon',
+                      help='is run as daemon')
+    (options, args) = parser.parse_args()
+
+    configure_logging(options)
+
+    fall_from_grace = FallFromGrace(options, args)
+
+    if options.daemon:
+        run_as_daemon(fall_from_grace)
+    else:
+        run(fall_from_grace)
+    pass
+
+
+if __name__ == '__main__':
+    main()
