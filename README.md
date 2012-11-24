@@ -39,10 +39,10 @@ TODO: document this further.
 
 `/etc/fall-from-grace.conf`:
 
-  conkeror:
-    cmdline: xulrunner-bin .*conkeror
-    actions:
-      rmem > 1073741824: term
+    conkeror:
+      cmdline: xulrunner-bin .*conkeror
+      actions:
+        rmem > 1073741824: term
 
 Config can be reloaded by `init.d` or by sending SIGHUP.
 
