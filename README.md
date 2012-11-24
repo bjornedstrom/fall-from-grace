@@ -42,7 +42,7 @@ fall-from-grace is configured in the single configuration file `/etc/fall-from-g
     conkeror:
       cmdline: xulrunner-bin .*conkeror
       actions:
-        rmem > 1073741824: term
+        rmem > 900m: term
 
 The first line (conkeror) is a single human-readable name for the process, used for logging. `cmdline` is a regex that will match on the process cmdline. `actions` is a list of triggers and actions to take.
 

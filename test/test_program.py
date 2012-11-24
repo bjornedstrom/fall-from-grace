@@ -80,5 +80,20 @@ conkeror:
                     'rmem': '123b',
                     'vmem': 0}))
 
+    def test_integer_parse(self):
+        trig = ffg.Trigger('rmem < 120')
+        parser = lambda x: trig._parse_int(x)
+
+        self.assertEquals(0, parser('0'))
+        self.assertEquals(1, parser('1'))
+        self.assertEquals(234, parser('234'))
+        self.assertEquals(2048, parser('2k'))
+        self.assertEquals(123*1024*1024, parser('123m'))
+        self.assertEquals(123*1024*1024, parser('123M'))
+
+        self.assertRaises(Exception, lambda: parser('123c'))
+        self.assertRaises(Exception, lambda: parser(''))
+        self.assertRaises(Exception, lambda: parser('r4'))
+
 if __name__ == '__main__':
     unittest.main()
