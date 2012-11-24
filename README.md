@@ -1,7 +1,9 @@
 # fall-from-grace
 November 24, 2012
 
-`fall-from-grace` is a userspace process supervisor.
+`fall-from-grace` is a non-intrusive userspace process supervisor.
+
+It runs on the side of existing process, rather than below them (in contrast with, for example, `supervisord` or `daemontools`).
 
 This is very early work in progress.
 
