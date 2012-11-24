@@ -39,7 +39,7 @@ All of the above projects have Debian packages, see `debian/control` for names.
 
 For development, run neat:
 
-    $ ./bin/fall-from-grace
+    $ PYTHONPATH=. ./bin/fall-from-grace
 
 For normal usage, control with `init.d`.
 
