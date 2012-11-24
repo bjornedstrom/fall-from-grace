@@ -27,6 +27,12 @@ class Monitor(object):
 
 
 class Trigger(object):
+    """Class implements safe evaluation of some expressions given an
+    environment. Currently supports comparison of integers, such as:
+
+    t = Trigger('a < 123')
+    True == t.evaluate({'a': 20})
+    """
 
     OPS = {
         '==': operator.eq,
@@ -36,10 +42,16 @@ class Trigger(object):
         '>=': operator.ge,
         }
 
-    def __init__(self, s):
-        self.s = s
+    def __init__(self, expr):
+        self.s = expr
 
     def evaluate(self, env):
+        """Given a dict of variables, attempt to evaluate the
+        expression given in the expression given in the constructor.
+
+        Will either return a bool or raise ConfigException on a parse
+        error.
+        """
         # TODO (bjorn): Make more robust!
 
         tokens = self.s.split()
@@ -66,7 +78,14 @@ class Trigger(object):
 
 
 class Configuration(object):
+    """A class holding program configuration.
+
+    This attempts to do strict validation of the configuration file
+    before committing to the new configs.
+    """
+
     def __init__(self):
+        # TODO (bjorn): Encapsulate this?
         self.monitor = None
 
     def validate_trigger(self, trigger):
@@ -74,6 +93,8 @@ class Configuration(object):
         trig.evaluate({'rmem': 0, 'vmem': 0})
 
     def load(self, yaml_str):
+        """Read config yaml from the string given."""
+
         try:
             conf = yaml.load(yaml_str)
         except Exception, e:
@@ -90,6 +111,8 @@ class Configuration(object):
         self.monitor = monitor
 
     def load_fragment(self, name, monitor_conf):
+        """Load part of the config file with validation."""
+
         if not 'cmdline' in monitor_conf:
             raise ConfigException('failed to read config file: %s has no "cmdline"' % name)
 
@@ -119,6 +142,8 @@ class Configuration(object):
         return m
 
     def load_from_file(self):
+        """Helper that reads the file in /etc."""
+
         try:
             self.load(file('/etc/fall-from-grace.conf', 'r').read())
         except Exception, e:
@@ -127,8 +152,11 @@ class Configuration(object):
 
 
 class FallFromGrace(object):
-    """Main program class."""
+    """Main program class for fall-from-grace.
 
+    See README for documentation."""
+
+    # Number of seconds between process enumeration / rule evaluation.
     SLEEP_TIME = 10
 
     def __init__(self, options, args):
@@ -146,11 +174,15 @@ class FallFromGrace(object):
             log.error('unhandled exception from config load: %s', e)
 
     def _get_environment(self, proc):
+        # TODO (bjorn): In the future we may be interested in a more
+        # diverse set of variables.
         env = {}
         env['rmem'], env['vmem'] = proc.get_memory_info()
         return env
 
     def _act(self, proc, monitor):
+        """Maybe do something with the process."""
+
         #log.debug('proc %s monitor %s', proc, monitor)
 
         env = self._get_environment(proc)
@@ -177,6 +209,8 @@ class FallFromGrace(object):
                     self._act(proc, monitor)
 
     def run(self):
+        """fall-from-grace main loop."""
+
         log.info('starting up fall-from-grace')
         self._read_conf()
 
@@ -188,9 +222,17 @@ class FallFromGrace(object):
             time.sleep(self.SLEEP_TIME)
 
     def shutdown(self, *args):
+        """Shutdown the program. Bound in the executable to TERM (or
+        just any clean shutdown).
+        """
+
         log.info('shutting down')
         self.running = False
 
     def reload(self, *args):
+        """Reload the program configuration file. Bound in the
+        executable to SIGHUP.
+        """
+
         log.info('reloading')
         self._read_conf()
