@@ -6,11 +6,12 @@
 import logging
 import operator
 import os
-import psutil
 import re
 import signal
 import time
 import yaml
+
+import fallfromgrace.process as process
 
 log = logging.getLogger('fall-from-grace')
 
@@ -197,19 +198,21 @@ class FallFromGrace(object):
         except Exception, e:
             log.error('unhandled exception from config load: %s', e)
 
-    def _get_environment(self, proc):
+    def _get_environment(self, pid):
         # TODO (bjorn): In the future we may be interested in a more
         # diverse set of variables.
-        env = {}
-        env['rmem'], env['vmem'] = proc.get_memory_info()
-        return env
+        return process.get_memory_usage(pid)
 
-    def _act(self, proc, monitor):
+    def _act(self, pid, monitor):
         """Maybe do something with the process."""
 
-        #log.debug('proc %s monitor %s', proc, monitor)
+        #log.debug('proc %s monitor %s', pid, monitor)
 
-        env = self._get_environment(proc)
+        try:
+            env = self._get_environment(pid)
+        except Exception, e:
+            log.warning('failed to get environment for pid %s - %s', pid, e)
+            return
 
         for trigger, action in monitor.actions.iteritems():
             try:
@@ -219,18 +222,25 @@ class FallFromGrace(object):
                 continue
             if eret:
                 log.info('Monitor %s and %s hit, action: %s', monitor.name, trigger, action)
-                if action == 'term':
-                    os.kill(proc.pid, signal.SIGTERM)
-                elif action == 'kill':
-                    os.kill(proc.pid, signal.SIGKILL)
+                try:
+                    if action == 'term':
+                        os.kill(pid, signal.SIGTERM)
+                    elif action == 'kill':
+                        os.kill(pid, signal.SIGKILL)
+                except Exception, e:
+                    log.warning('kill failed for %s with %s', pid, e)
 
     def _tick(self):
         # TODO (bjorn): Optimize
-        for proc in psutil.get_process_list():
-            cmdline = ' '.join(proc.cmdline)
+        for pid in process.get_pids():
+            try:
+                cmdline = process.get_cmdline(pid)
+            except Exception, e:
+                log.warning('process exception for pid %s: %s', pid, e)
+                continue
             for monitor in self.config.monitor:
                 if monitor.cmdline.search(cmdline):
-                    self._act(proc, monitor)
+                    self._act(pid, monitor)
 
     def run(self):
         """fall-from-grace main loop."""
