@@ -9,5 +9,6 @@ setup(name='fall-from-grace',
       author=u'Björn Edström',
       author_email='be@bjrn.se',
       url='https://github.com/bjornedstrom/fall-from-grace',
+      packages=['fallfromgrace'],
       scripts=['bin/fall-from-grace']
      )

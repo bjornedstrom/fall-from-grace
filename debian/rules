@@ -2,3 +2,11 @@
 
 %:
 	dh $@
+
+# TODO (bjorn): Run with --no-start because otherwise debian install
+# will fail as this is run before the python files (fallfromgrace/...)
+# have installed correctly.
+#
+# There should be a better way to solve this.
+override_dh_installinit:
+	dh_installinit --name=fall-from-grace --no-start
