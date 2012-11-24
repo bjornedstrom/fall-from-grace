@@ -5,7 +5,7 @@ November 24, 2012
 
 It runs on the side of existing processes, rather than below them (in contrast with, for example, `supervisord` or `daemontools`).
 
-This isa very early work in progress.
+This software is currently very early work in progress.
 
 # Rationale
 
@@ -35,14 +35,16 @@ For normal usage, control with `init.d`.
 
 # Configuration
 
-TODO: document this further.
+NOTE: This config format is much likely to change during development.
 
-`/etc/fall-from-grace.conf`:
+fall-from-grace is configured in the single configuration file `/etc/fall-from-grace.conf`. Each process to monitor has a YAML fragment, as below:
 
     conkeror:
       cmdline: xulrunner-bin .*conkeror
       actions:
         rmem > 1073741824: term
+
+The first line (conkeror) is a single human-readable name for the process, used for logging. `cmdline` is a regex that will match on the process cmdline. `actions` is a list of triggers and actions to take.
 
 Config can be reloaded by `init.d` or by sending SIGHUP.
 
