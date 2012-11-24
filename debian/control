@@ -8,7 +8,7 @@ Standards-Version: 3.8.4
 
 Package: fall-from-grace
 Architecture: all
-Homepage: http://TODO.com/
+Homepage: https://github.com/bjornedstrom/fall-from-grace
 XB-Python-Version: ${python:Versions}
 Depends: ${misc:Depends}, ${python:Depends}, python-psutil, python-daemon
 Description: non-intrusive userspace process supervisor

@@ -8,6 +8,6 @@ setup(name='fall-from-grace',
       description='non-intrusive userspace process supervisor',
       author=u'Björn Edström',
       author_email='be@bjrn.se',
-      url='TODO',
+      url='https://github.com/bjornedstrom/fall-from-grace',
       scripts=['bin/fall-from-grace']
      )
