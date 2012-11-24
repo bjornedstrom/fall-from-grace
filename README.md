@@ -15,17 +15,27 @@ It is written because I have not had great success with the standard unix facili
 
 # Install & Run
 
-You can
+If you are on a Debian based distribution, it is easiest to just build and install the Debian package:
+
+    $ debuild
+
+Otherwise, you can;
 
     $ python setup.py build
 
 And then install `init.d` script `debian/init` by hand.
 
-Otherwise:
+## Dependencies
 
-    $ debuild
+The program depends on:
 
-The program depends on `psutil` ([psutil](http://code.google.com/p/psutil/)), `daemon` ([python-daemon](http://pypi.python.org/pypi/python-daemon/)) and `yaml` ([PyYaml](http://pyyaml.org/)) (debian packages `python-psutil`, `python-daemon`, `python-yaml`).
+- `psutil` ([psutil](http://code.google.com/p/psutil/)).
+- `daemon` ([python-daemon](http://pypi.python.org/pypi/python-daemon/)).
+- `yaml` ([PyYaml](http://pyyaml.org/)).
+
+All of the above projects have Debian packages, see `debian/control` for names.
+
+## Run
 
 For development, run neat:
 
