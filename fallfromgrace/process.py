@@ -25,10 +25,11 @@ def get_cmdline(pid):
 
 def get_memory_usage(pid):
     """Returns a dict with memory usage information for the given
-    pid:
+    pid. The dict has the following keys:
 
-    {'rmem': ...,
-     'vmem: ...}"""
+    "vmem": virtual memory usage,
+    "rmem": residential memory usage.
+    """
 
     proc = psutil.Process(pid)
     usage = {}
