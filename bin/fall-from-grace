@@ -81,6 +81,8 @@ def run_as_daemon(ffg, options):
         signal.SIGHUP: ffg.reload,
     }
     with context:
+        # The syslog handler opens a fd to /dev/log so we must set
+        # this here.
         configure_logging(options)
         ffg.run()
 
@@ -94,7 +96,7 @@ def main():
     parser = optparse.OptionParser(
         usage='usage: %prog [options]')
     parser.add_option('-d', '--daemon', action='store_true', default=False, dest='daemon',
-                      help='is run as daemon')
+                      help='run as daemon')
     (options, args) = parser.parse_args()
 
     fall_from_grace = fallfromgrace.FallFromGrace(options, args)
