@@ -12,6 +12,7 @@ import logging.handlers
 import optparse
 import os
 import signal
+import traceback
 
 import fallfromgrace.program as fallfromgrace
 
@@ -97,10 +98,13 @@ def main():
     fall_from_grace = fallfromgrace.FallFromGrace(options, args)
 
     if options.daemon:
-        run_as_daemon(fall_from_grace)
+        try:
+            run_as_daemon(fall_from_grace)
+        except:
+            exc = traceback.format_exc()
+            file('/tmp/fall-from-grace.traceback', 'w').write(exc)
     else:
         run(fall_from_grace)
-    pass
 
 
 if __name__ == '__main__':
