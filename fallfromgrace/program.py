@@ -233,10 +233,8 @@ class FallFromGrace(object):
     def _tick(self):
         # TODO (bjorn): Optimize
         for pid in process.get_pids():
-            try:
-                cmdline = process.get_cmdline(pid)
-            except Exception, e:
-                log.warning('process exception for pid %s: %s', pid, e)
+            cmdline = process.get_cmdline(pid)
+            if cmdline is None:
                 continue
             for monitor in self.config.monitor:
                 if monitor.cmdline.search(cmdline):

@@ -19,8 +19,13 @@ def get_pids():
 def get_cmdline(pid):
     """Returns the cmdline of the given pid."""
 
-    proc = psutil.Process(pid)
-    return ' '.join(proc.cmdline)
+    try:
+        proc = psutil.Process(pid)
+        return ' '.join(proc.cmdline)
+    except psutil.NoSuchProcess:
+        return None
+    except Exception, e:
+        return None
 
 
 def get_memory_usage(pid):
