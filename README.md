@@ -1,5 +1,5 @@
 # fall-from-grace
-November 24, 2012
+0.1.0-rc1, November 24, 2012
 
 `fall-from-grace` is a non-intrusive userspace process supervisor.
 
