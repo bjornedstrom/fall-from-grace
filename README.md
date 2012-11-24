@@ -11,7 +11,7 @@ This is very early work in progress.
 
 Judge, jury and executioner specifically designed to gracefully terminate non-service processes (web browsers, media players...) leaking memory. Can easily be adapted for other triggers.
 
-It is written because I have not had great success with the standard unix facilities, such as setting resource limits.
+It is written because I have not had great success with the standard unix facilities, such as setting resource limits, or tweaking the OOM killer (see my other project [oomtools](https://github.com/bjornedstrom/oomtools))
 
 # Install & Run
 
