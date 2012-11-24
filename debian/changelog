@@ -1,3 +1,9 @@
+fall-from-grace (0.1.0-rc1) unstable; urgency=low
+
+  * Release candidate for the first version.
+
+ -- Björn Edström <be@bjrn.se>  Sat, 24 Nov 2012 17:30:00 +0100
+
 fall-from-grace (0.0.1) UNRELEASED; urgency=low
 
   * Initial release. (Closes: #XXXXXX)
