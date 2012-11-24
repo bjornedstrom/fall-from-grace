@@ -11,6 +11,6 @@ Architecture: all
 Homepage: http://TODO.com/
 XB-Python-Version: ${python:Versions}
 Depends: ${misc:Depends}, ${python:Depends}, python-psutil, python-daemon
-Description: userspace process supervisor
+Description: non-intrusive userspace process supervisor
   Can for example gracefully shutdown process using too much resources
   (memory) before the oom killer kicks in.
