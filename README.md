@@ -3,13 +3,13 @@ November 24, 2012
 
 `fall-from-grace` is a non-intrusive userspace process supervisor.
 
-It runs on the side of existing process, rather than below them (in contrast with, for example, `supervisord` or `daemontools`).
+It runs on the side of existing processes, rather than below them (in contrast with, for example, `supervisord` or `daemontools`).
 
 This is very early work in progress.
 
 # Rationale
 
-Judge, jury and executioner specifically designed to gracefully terminate processes leaking memory (but can be adapted for triggering on other aspects as well).
+Judge, jury and executioner specifically designed to gracefully terminate non-service processes (web browsers, media players...) leaking memory. Can easily be adapted for other triggers.
 
 It is written because I have not had great success with the standard unix facilities, such as setting resource limits.
 
