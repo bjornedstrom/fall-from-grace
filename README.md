@@ -1,7 +1,7 @@
 # fall-from-grace
 November 24, 2012
 
-`fall-from-grace` is a userspace process monitor.
+`fall-from-grace` is a userspace process supervisor.
 
 This is very early work in progress.
 

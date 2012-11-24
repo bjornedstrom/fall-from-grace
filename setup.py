@@ -5,7 +5,7 @@ from distutils.core import setup
 
 setup(name='fall-from-grace',
       version='0.0.1',
-      description='userspace process monitor',
+      description='userspace process supervisor',
       author=u'Björn Edström',
       author_email='be@bjrn.se',
       url='TODO',
