@@ -7,7 +7,6 @@
 import daemon
 import fcntl
 import functools
-import lockfile
 import logging
 import logging.handlers
 import optparse
