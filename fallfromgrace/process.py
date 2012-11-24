@@ -25,6 +25,7 @@ def get_cmdline(pid):
     except psutil.NoSuchProcess:
         return None
     except Exception, e:
+        log.warning('process exception for pid %s: %s', pid, e)
         return None
 
 
