@@ -50,6 +50,8 @@ TODO: document this further.
         }
     }
 
+Config can be reloaded by `init.d` or by sending SIGHUP.
+
 # Administration
 
 `fall-from-grace` will log interesting events to syslog.
