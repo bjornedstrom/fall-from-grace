@@ -7,11 +7,11 @@ It runs on the side of existing processes, rather than below them (in contrast w
 
 This software is currently very early work in progress.
 
-# Rationale
+## Rationale
 
 Judge, jury and executioner specifically designed to gracefully terminate non-service processes (web browsers, media players...) leaking memory. Can easily be adapted for other triggers.
 
-It is written because I have not had great success with the standard unix facilities, such as setting resource limits, or tweaking the OOM killer (see my other project [oomtools](https://github.com/bjornedstrom/oomtools))
+It is written because I have not had great success with the standard unix facilities, such as setting resource limits, or tweaking the OOM killer (see my other project [oomtools](https://github.com/bjornedstrom/oomtools)).
 
 # Install & Run
 
@@ -43,7 +43,7 @@ For development, run neat:
 
 For normal usage, control with `init.d`.
 
-# Configuration
+# Configuration & Administration
 
 NOTE: This config format is much likely to change during development.
 
@@ -58,7 +58,7 @@ The first line (conkeror) is a single human-readable name for the process, used 
 
 Config can be reloaded by `init.d` or by sending SIGHUP.
 
-# Administration
+## Administration
 
 `fall-from-grace` will log interesting events to syslog.
 
