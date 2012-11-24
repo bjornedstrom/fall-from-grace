@@ -4,6 +4,7 @@
 # See LICENSE for details.
 
 import logging
+import operator
 import os
 import psutil
 import re
@@ -14,6 +15,10 @@ import yaml
 log = logging.getLogger('fall-from-grace')
 
 
+class ConfigException(Exception):
+    pass
+
+
 class Monitor(object):
     def __init__(self):
         self.name = None
@@ -22,6 +27,15 @@ class Monitor(object):
 
 
 class Trigger(object):
+
+    OPS = {
+        '==': operator.eq,
+        '<': operator.lt,
+        '>': operator.gt,
+        '<=': operator.le,
+        '>=': operator.ge,
+        }
+
     def __init__(self, s):
         self.s = s
 
@@ -29,21 +43,26 @@ class Trigger(object):
         # TODO (bjorn): Make more robust!
 
         tokens = self.s.split()
+        if not len(tokens) == 3:
+            raise ConfigException('unknown trigger %s' % self.s)
+
+        # Set variables
         new = []
         for tok in tokens:
             val = tok
             if val in env:
                 val = env[val]
             new.append(val)
-        if not len(new) == 3:
-            return False
-        #log.debug('new: %s', new)
-        if new[1] == '>':
-            return new[0] > int(new[2])
 
+        try:
+            op_str = new[1]
+            if op_str in self.OPS:
+                op_func = self.OPS[op_str]
+                return op_func(int(new[0]), int(new[2]))
+        except Exception, e:
+            raise ConfigException('unknown trigger %s: %s' % (self.s, e))
 
-class ConfigException(Exception):
-    pass
+        raise ConfigException('unknown trigger %s' % self.s)
 
 
 class Configuration(object):
@@ -64,35 +83,40 @@ class Configuration(object):
         monitor = []
 
         for name, monitor_conf in conf.iteritems():
-            if not 'cmdline' in monitor_conf:
-                raise ConfigException('failed to read config file: %s has no "cmdline"' % name)
-            if 'actions' not in monitor_conf:
-                raise ConfigException('failed to read config file: %s has no "actions"' % name)
-
-            if not monitor_conf['actions']:
-                raise ConfigException('failed to read config file: %s has no "actions"' % name)
-
-            try:
-                cmdline = re.compile(monitor_conf['cmdline'])
-            except Exception, e:
-                raise ConfigException('failed to compile cmdline %r: %s' % (cmdline, e))
-
-            for trigger, action in monitor_conf['actions'].iteritems():
-                if action not in ['term']:
-                    raise ConfigException('invalid action: %s' % action)
-                try:
-                    self.validate_trigger(trigger)
-                except Exception, e:
-                    raise ConfigException('invalid trigger: %s - %s' % (trigger, e))
-
-            m = Monitor()
-            m.name = name
-            m.cmdline = cmdline
-            m.actions = monitor_conf['actions']
+            m = self.load_fragment(name, monitor_conf)
             monitor.append(m)
 
         # success
         self.monitor = monitor
+
+    def load_fragment(self, name, monitor_conf):
+        if not 'cmdline' in monitor_conf:
+            raise ConfigException('failed to read config file: %s has no "cmdline"' % name)
+
+        if 'actions' not in monitor_conf:
+            raise ConfigException('failed to read config file: %s has no "actions"' % name)
+
+        if not monitor_conf['actions']:
+            raise ConfigException('failed to read config file: %s has no "actions"' % name)
+
+        try:
+            cmdline = re.compile(monitor_conf['cmdline'])
+        except Exception, e:
+            raise ConfigException('failed to compile cmdline %r: %s' % (cmdline, e))
+
+        for trigger, action in monitor_conf['actions'].iteritems():
+            if action not in ['term', 'kill']:
+                raise ConfigException('invalid action: %s' % action)
+            try:
+                self.validate_trigger(trigger)
+            except Exception, e:
+                raise ConfigException('invalid trigger: %s - %s' % (trigger, e))
+
+        m = Monitor()
+        m.name = name
+        m.cmdline = cmdline
+        m.actions = monitor_conf['actions']
+        return m
 
     def load_from_file(self):
         try:
@@ -121,30 +145,46 @@ class FallFromGrace(object):
         except Exception, e:
             log.error('unhandled exception from config load: %s', e)
 
+    def _get_environment(self, proc):
+        env = {}
+        env['rmem'], env['vmem'] = proc.get_memory_info()
+        return env
+
     def _act(self, proc, monitor):
         #log.debug('proc %s monitor %s', proc, monitor)
 
-        env = {}
-        env['rmem'], env['vmem'] = proc.get_memory_info()
+        env = self._get_environment(proc)
 
         for trigger, action in monitor.actions.iteritems():
-            eret = Trigger(trigger).evaluate(env)
+            try:
+                eret = Trigger(trigger).evaluate(env)
+            except Exception, e:
+                log.error('failed to evaluate trigger %r: %s', trigger, e)
+                continue
             if eret:
                 log.info('Monitor %s and %s hit, action: %s', monitor.name, trigger, action)
                 if action == 'term':
                     os.kill(proc.pid, signal.SIGTERM)
+                elif action == 'kill':
+                    os.kill(proc.pid, signal.SIGKILL)
+
+    def _tick(self):
+        # TODO (bjorn): Optimize
+        for proc in psutil.get_process_list():
+            cmdline = ' '.join(proc.cmdline)
+            for monitor in self.config.monitor:
+                if monitor.cmdline.search(cmdline):
+                    self._act(proc, monitor)
 
     def run(self):
         log.info('starting up fall-from-grace')
         self._read_conf()
 
         while self.running:
-            # TODO (bjorn): Optimize
-            for proc in psutil.get_process_list():
-                cmdline = ' '.join(proc.cmdline)
-                for monitor in self.config.monitor:
-                    if monitor.cmdline.search(cmdline):
-                        self._act(proc, monitor)
+            try:
+                self._tick()
+            except Exception, e:
+                log.error('uncaught exception in main loop: %e', e)
             time.sleep(self.SLEEP_TIME)
 
     def shutdown(self, *args):

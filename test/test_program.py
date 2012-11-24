@@ -35,6 +35,50 @@ conkeror:
     rmem > 1073741824: term
 """))
 
+    def test_trigger_success(self):
+        self.assertEquals(True,
+                          ffg.Trigger('rmem < 123').evaluate({
+                    'rmem': 122,
+                    'vmem': 0}))
+
+        self.assertEquals(False,
+                          ffg.Trigger('rmem < 123').evaluate({
+                    'rmem': 123,
+                    'vmem': 0}))
+
+        self.assertEquals(True,
+                          ffg.Trigger('rmem <= 123').evaluate({
+                    'rmem': 123,
+                    'vmem': 0}))
+
+        self.assertEquals(True,
+                          ffg.Trigger('123 <= rmem').evaluate({
+                    'rmem': 123,
+                    'vmem': 0}))
+
+        self.assertEquals(True,
+                          ffg.Trigger('120 < rmem').evaluate({
+                    'rmem': 123,
+                    'vmem': 0}))
+
+        self.assertEquals(True,
+                          ffg.Trigger('123 >= rmem').evaluate({
+                    'rmem': 123,
+                    'vmem': 0}))
+
+        self.assertEquals(False,
+                          ffg.Trigger('120 > rmem').evaluate({
+                    'rmem': 123,
+                    'vmem': 0}))
+
+    def test_trigger_fail(self):
+        self.assertRaises(ffg.ConfigException, lambda: ffg.Trigger('! 1230').evaluate({
+                    'rmem': 123,
+                    'vmem': 0}))
+
+        self.assertRaises(ffg.ConfigException, lambda: ffg.Trigger('120 > rmem').evaluate({
+                    'rmem': '123b',
+                    'vmem': 0}))
 
 if __name__ == '__main__':
     unittest.main()
