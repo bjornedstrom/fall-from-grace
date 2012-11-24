@@ -252,7 +252,7 @@ class FallFromGrace(object):
             try:
                 self._tick()
             except Exception, e:
-                log.error('uncaught exception in main loop: %e', e)
+                log.error('uncaught exception in main loop: %s', e)
             time.sleep(self.SLEEP_TIME)
 
     def shutdown(self, *args):
