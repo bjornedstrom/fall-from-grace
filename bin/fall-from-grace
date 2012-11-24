@@ -29,6 +29,10 @@ class Monitor(object):
 
 
 class FallFromGrace(object):
+    """Main program class."""
+
+    SLEEP_TIME = 10
+
     def __init__(self, options, args):
         self.options = options
         self.args = args
@@ -88,7 +92,7 @@ class FallFromGrace(object):
                 for monitor in self.monitor:
                     if monitor.cmdline.search(cmdline):
                         self._act(proc, monitor)
-            time.sleep(10)
+            time.sleep(self.SLEEP_TIME)
 
     def shutdown(self, *args):
         log.info('shutting down')
