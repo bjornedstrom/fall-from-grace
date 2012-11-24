@@ -7,7 +7,6 @@
 import daemon
 import fcntl
 import functools
-import json
 import lockfile
 import logging
 import logging.handlers
@@ -18,6 +17,7 @@ import re
 import signal
 import sys
 import time
+import yaml
 
 log = logging.getLogger('fall-from-grace')
 
@@ -38,11 +38,12 @@ class FallFromGrace(object):
 
     def _read_conf(self):
         try:
-            conf = json.loads(file('/etc/fall-from-grace.conf', 'r').read())
+            conf = yaml.load(file('/etc/fall-from-grace.conf', 'r').read())
         except Exception, e:
             log.error('failed to read config file: %s', e)
             return
-        for name, monitor_conf in conf['monitor'].iteritems():
+        self.monitor = []
+        for name, monitor_conf in conf.iteritems():
             m = Monitor()
             m.name = name
             m.cmdline = re.compile(monitor_conf['cmdline'])

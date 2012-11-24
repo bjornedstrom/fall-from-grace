@@ -5,7 +5,7 @@ November 24, 2012
 
 It runs on the side of existing processes, rather than below them (in contrast with, for example, `supervisord` or `daemontools`).
 
-This is very early work in progress.
+This isa very early work in progress.
 
 # Rationale
 
@@ -25,7 +25,7 @@ Otherwise:
 
     $ debuild
 
-The program depends on `psutil` and `daemon` (debian packages python-psutil, python-daemon)
+The program depends on `psutil` ([psutil](http://code.google.com/p/psutil/)), `daemon` ([python-daemon](http://pypi.python.org/pypi/python-daemon/)) and `yaml` ([PyYaml](http://pyyaml.org/)) (debian packages `python-psutil`, `python-daemon`, `python-yaml`).
 
 For development, run neat:
 
@@ -39,16 +39,10 @@ TODO: document this further.
 
 `/etc/fall-from-grace.conf`:
 
-    {
-        "monitor": {
-            "conkeror": {
-                "cmdline": "xulrunner-bin .*conkeror",
-                "actions": {
-                    "rmem > 1073741824": "term"
-                }
-            }
-        }
-    }
+  conkeror:
+    cmdline: xulrunner-bin .*conkeror
+    actions:
+      rmem > 1073741824: term
 
 Config can be reloaded by `init.d` or by sending SIGHUP.
 
