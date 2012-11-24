@@ -1,23 +1,23 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2010-2011 Björn Edström <be@bjrn.se>
+# Copyright (c) 2012 Björn Edström <be@bjrn.se>
 # See LICENSE for details.
 
 import daemon
+import fcntl
+import functools
+import json
 import lockfile
 import logging
 import logging.handlers
 import optparse
+import os
 import psutil
+import re
+import signal
 import sys
 import time
-import functools
-import signal
-import os
-import fcntl
-import json
-import re
 
 log = logging.getLogger('fall-from-grace')
 
@@ -115,6 +115,7 @@ def run_as_daemon(ffg):
     if not os.path.exists(home):
         os.mkdir(home)
 
+    # http://code.activestate.com/recipes/577911-context-manager-for-a-daemon-pid-file/
     class PidFile(object):
         """Context manager that locks a pid file.  Implemented as class
         not generator because daemon.py is calling .__exit__() with no parameters
