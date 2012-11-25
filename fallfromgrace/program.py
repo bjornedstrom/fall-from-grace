@@ -177,8 +177,9 @@ class FallFromGrace(object):
 
     def _exec_with_rate_limit(self, monitor, trigger, action):
         exec_at, prog = action.split(' ', 1)
+        state_key = '%s %s' % (monitor.name, prog)
         at = None
-        last = self.exec_state.get(prog, 0)
+        last = self.exec_state.get(state_key, 0)
 
         if '@' in exec_at:
             exec_str, at = exec_at.split('@', 1)
@@ -198,7 +199,7 @@ class FallFromGrace(object):
             # TODO (bjorn): Security implications!!!
             os.system(prog)
 
-            self.exec_state[prog] = time.time()
+            self.exec_state[state_key] = time.time()
 
     def _act(self, pid, monitor):
         """Maybe do something with the process."""
