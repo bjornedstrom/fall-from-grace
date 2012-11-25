@@ -175,7 +175,7 @@ class FallFromGrace(object):
         # diverse set of variables.
         return process.get_memory_usage(pid)
 
-    def _exec_with_rate_limit(self, monitor, trigger, action):
+    def _exec_with_rate_limit(self, pid, monitor, trigger, action):
         exec_at, prog = action.split(' ', 1)
         state_key = '%s %s' % (monitor.name, prog)
         at = None
@@ -196,8 +196,11 @@ class FallFromGrace(object):
         if run:
             log.info('Monitor %s and %s hit, action: %s', monitor.name, trigger, action)
 
+            prog_expand = prog.replace('$PID', str(pid))
+            prog_expand = prog_expand.replace('$NAME', monitor.name)
+
             # TODO (bjorn): Security implications!!!
-            os.system(prog)
+            os.system(prog_expand)
 
             self.exec_state[state_key] = time.time()
 
@@ -227,7 +230,7 @@ class FallFromGrace(object):
                     elif action == 'kill':
                         os.kill(pid, signal.SIGKILL)
                     elif action.startswith('exec'):
-                        self._exec_with_rate_limit(monitor, trigger, action)
+                        self._exec_with_rate_limit(pid, monitor, trigger, action)
                 except Exception, e:
                     log.warning('action failed for %s with %s', pid, e)
 
