@@ -6,3 +6,4 @@ debian/*.debhelper
 debian/*.substvars
 debian/files
 debian/fall-from-grace/
+.coverage
