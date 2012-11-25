@@ -199,12 +199,13 @@ class FallFromGrace(object):
                     elif action == 'kill':
                         os.kill(pid, signal.SIGKILL)
                     # TODO (bjorn): Security implications!!!
+                    # TODO (bjorn): Rate limiting.
                     elif action.startswith('exec'):
                         prog = action.split(' ', 1)[-1]
                         log.info('executing %r', prog)
                         os.system(prog)
                 except Exception, e:
-                    log.warning('kill failed for %s with %s', pid, e)
+                    log.warning('action failed for %s with %s', pid, e)
 
     def _tick(self):
         # TODO (bjorn): Optimize
