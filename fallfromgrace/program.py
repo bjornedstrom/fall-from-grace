@@ -24,9 +24,19 @@ class ConfigException(Exception):
 
 
 class Monitor(object):
+    """Class represents a process to Monitor, i.e. a YAML
+    configuration fragment for a process and it's actions.
+    """
+
     def __init__(self):
+        # str: Name of the monitor/"rule".
         self.name = None
+
+        # _sre.SRE_Pattern: compiled regex matching on process
+        # cmdline.
         self.cmdline = None
+
+        # [(Trigger, Action)]: list of tuples (trigger, action).
         self.actions = None
 
 
@@ -77,6 +87,9 @@ class Trigger(object):
 
 
 class Action(object):
+    """This class represents an action to take on a program.
+    """
+
     def __init__(self, action_str):
         self.action_str = action_str
         self.action_list = parser_action.parse(action_str)
@@ -123,18 +136,28 @@ class Action(object):
             prog_expand = prog_expand.replace('$PID', str(pid))
             prog_expand = prog_expand.replace('$NAME', monitor.name)
 
-            # TODO (bjorn): Security implications!!!
-            os.system(prog_expand)
+            self._do_exec(prog_expand)
 
             self.exec_state[state_key] = time.time()
 
     def _signal(self, pid, monitor, trigger, sig):
         log.info('Monitor %s and %s hit, action: %s', monitor.name, trigger, self.action_str)
         try:
-            os.kill(pid, sig)
+            self._do_signal(pid, sig)
         except Exception, e:
             # Handle above
             raise
+
+    def _do_exec(self, prog):
+        """Wrapper for unit testing."""
+
+        # TODO (bjorn): Security implications!!!
+        os.system(prog)
+
+    def _do_signal(self, pid, sig):
+        """Wrapper for unit testing."""
+
+        os.kill(pid, sig)
 
 
 class Configuration(object):
@@ -142,6 +165,11 @@ class Configuration(object):
 
     This attempts to do strict validation of the configuration file
     before committing to the new configs.
+
+    <name>:
+      cmdline: <regex>
+      actions:
+        <Trigger>: <Action>
     """
 
     def __init__(self):
