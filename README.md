@@ -58,9 +58,31 @@ fall-from-grace is configured in the single configuration file `/etc/fall-from-g
 
 The first line (conkeror) is a single human-readable name for the process, used for logging. `cmdline` is a regex that will match on the process cmdline. `actions` is a list of triggers and actions to take.
 
-Config can be reloaded by `init.d` or by sending SIGHUP.
+## Triggers
+
+Here are some examples of valid triggers:
+
+    rmem > 1g
+    1g < rmem
+    vmem > 900m
+    rmem > 2097152
+
+## Actions
+
+Here are some examples of valid actions:
+
+    term
+    kill
+    exec logger "program is using too much ram"
+    exec logger "$NAME ($PID) is using too much ram"
+    exec @ 1h logger "$NAME ($PID) is using too much ram"
+
+The last form (`exec @ TIME`) means the program will be run at most
+once per hour.
 
 ## Administration
+
+Config can be reloaded by `init.d` or by sending SIGHUP.
 
 `fall-from-grace` will log interesting events to syslog.
 
