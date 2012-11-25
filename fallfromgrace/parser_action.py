@@ -63,6 +63,8 @@ def p_error(t):
     log.error('Syntax error at "%s"', t.value)
     raise Exception('Syntax error at "%s"' % (t.value,))
 
+# TODO (bjorn): Suppress writing of the temp files altogether.
+# Also see parser_trigger.py
 parser = yacc.yacc(errorlog=log,
                    outputdir='/tmp',
                    debugfile='/tmp/parser_action.out')

@@ -72,7 +72,7 @@ def p_error(t):
 
 parser = yacc.yacc(errorlog=log,
                    outputdir='/tmp',
-                   debugfile='/tmp/parser.out')
+                   debugfile='/tmp/parser_trigger.out')
 
 def parse(s):
     """Parse a rule specification.
