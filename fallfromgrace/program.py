@@ -11,6 +11,7 @@ import signal
 import time
 import yaml
 
+import fallfromgrace.number as number
 import fallfromgrace.parser as parser
 import fallfromgrace.process as process
 
@@ -183,8 +184,9 @@ class FallFromGrace(object):
 
         if '@' in exec_at:
             exec_str, at = exec_at.split('@', 1)
-            # TODO (bjorn): Handle fixes (15m for example)
-            at = int(at)
+            at = number.unfix(at, {'s': 1,
+                                   'm': 60,
+                                   'h': 60*60})
 
         run = False
         if exec_at == 'exec':

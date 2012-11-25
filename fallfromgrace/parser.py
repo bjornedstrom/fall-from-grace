@@ -7,6 +7,8 @@ import logging
 import ply.lex as lex
 import ply.yacc as yacc
 
+import fallfromgrace.number as number
+
 log = logging.getLogger('fall-from-grace')
 
 
@@ -18,22 +20,11 @@ t_OP2 = r'(<=|>=|==)'
 
 def t_NUMBER(t):
     r'\d+[kmgKMG]?'
-    val = t.value
-    if val[-1] in 'kmgKMG':
-        num = val[:-1]
-        fix = val[-1]
-    else:
-        num = val
-        fix = None
-    mul = 1
-    if fix is not None:
-        mul = {
-            'k': 1024,
-            'm': 1024**2,
-            'g': 1024**3,
-            }.get(fix.lower(), 1)
     try:
-        t.value = int(num) * mul
+        t.value = number.unfix(t.value, {
+                'k': 1024,
+                'm': 1024**2,
+                'g': 1024**3})
     except ValueError:
         log.error('Integer value too large %d', t.value)
         t.value = 0
