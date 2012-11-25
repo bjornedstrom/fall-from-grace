@@ -1,5 +1,5 @@
 # fall-from-grace
-0.1.0-rc1, November 24, 2012
+0.1.0-rc1, November 2012
 
 `fall-from-grace` is a non-intrusive userspace process supervisor.
 
@@ -32,6 +32,7 @@ The program depends on:
 - `psutil` ([psutil](http://code.google.com/p/psutil/)).
 - `daemon` ([python-daemon](http://pypi.python.org/pypi/python-daemon/)).
 - `yaml` ([PyYaml](http://pyyaml.org/)).
+- `ply` ([ply](http://www.dabeaz.com/ply/)).
 
 All of the above projects have Debian packages, see `debian/control` for names.
 

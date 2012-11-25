@@ -10,7 +10,7 @@ Package: fall-from-grace
 Architecture: all
 Homepage: https://github.com/bjornedstrom/fall-from-grace
 XB-Python-Version: ${python:Versions}
-Depends: ${misc:Depends}, ${python:Depends}, python-psutil, python-daemon, python-yaml
+Depends: ${misc:Depends}, ${python:Depends}, python-psutil, python-daemon, python-yaml, python-ply
 Description: non-intrusive userspace process supervisor
   Can for example gracefully shutdown process using too much resources
   (memory) before the oom killer kicks in.

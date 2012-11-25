@@ -11,6 +11,7 @@ import signal
 import time
 import yaml
 
+import fallfromgrace.parser as parser
 import fallfromgrace.process as process
 
 log = logging.getLogger('fall-from-grace')
@@ -45,46 +46,15 @@ class Trigger(object):
 
     def __init__(self, expr):
         self.s = expr
-
-    SIZE = re.compile(r'(\d+)(\D+)?')
-
-    def _parse_int(self, n):
-        if isinstance(n, (int, long)):
-            return n
-        if ' ' in n:
-            raise ValueError('n contains space')
-        mobj = self.SIZE.match(n)
-        if not mobj:
-            raise ValueError('failed to parse %s' % n)
-        number, postfix = mobj.groups()
-        muls = {
-            'k': 1024,
-            'm': 1024**2,
-            'g': 1024**3,
-            }
-        factor = 1
-        if postfix is not None:
-            if postfix.lower() not in muls:
-                raise ValueError('invalid prefix')
-            factor = muls[postfix.lower()]
-        return int(number) * factor
+        try:
+            self.expr = parser.parse(expr)
+        except Exception, e:
+            raise ConfigException('parse error %r: %s' % (expr, e))
 
     def evaluate(self, env):
-        """Given a dict of variables, attempt to evaluate the
-        expression given in the expression given in the constructor.
-
-        Will either return a bool or raise ConfigException on a parse
-        error.
-        """
-        # TODO (bjorn): Make more robust!
-
-        tokens = self.s.split()
-        if not len(tokens) == 3:
-            raise ConfigException('unknown trigger %s' % self.s)
-
         # Set variables
         new = []
-        for tok in tokens:
+        for tok in self.expr:
             val = tok
             if val in env:
                 val = env[val]
@@ -94,8 +64,7 @@ class Trigger(object):
             op_str = new[1]
             if op_str in self.OPS:
                 op_func = self.OPS[op_str]
-                return op_func(self._parse_int(new[0]),
-                               self._parse_int(new[2]))
+                return op_func(int(new[0]), int(new[2]))
         except Exception, e:
             raise ConfigException('unknown trigger %s: %s' % (self.s, e))
 
