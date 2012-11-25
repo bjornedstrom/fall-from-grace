@@ -12,7 +12,7 @@ import time
 import yaml
 
 import fallfromgrace.number as number
-import fallfromgrace.parser as parser
+import fallfromgrace.parser_trigger as parser_trigger
 import fallfromgrace.process as process
 
 log = logging.getLogger('fall-from-grace')
@@ -48,7 +48,7 @@ class Trigger(object):
     def __init__(self, expr):
         self.s = expr
         try:
-            self.expr = parser.parse(expr)
+            self.expr = parser_trigger.parse(expr)
         except Exception, e:
             raise ConfigException('parse error %r: %s' % (expr, e))
 
