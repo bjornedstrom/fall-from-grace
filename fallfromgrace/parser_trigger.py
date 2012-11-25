@@ -41,7 +41,7 @@ def t_error(t):
     raise Exception('Illegal character "%s"' % (t.value[0],))
     t.lexer.skip(1)
 
-lex.lex(errorlog=log)
+lexer = lex.lex(errorlog=log)
 
 precedence = (
     ('left', 'OP2', 'OP1'),
@@ -70,15 +70,15 @@ def p_error(t):
     log.error('Syntax error at "%s"', t.value)
     raise Exception('Syntax error at "%s"' % (t.value,))
 
-yacc.yacc(errorlog=log,
-          outputdir='/tmp',
-          debugfile='/tmp/parser.out')
+parser = yacc.yacc(errorlog=log,
+                   outputdir='/tmp',
+                   debugfile='/tmp/parser.out')
 
 def parse(s):
     """Parse a rule specification.
     """
 
-    parsed = yacc.parse(s)
+    parsed = parser.parse(s, lexer=lexer)
     if len(parsed) != 3:
         raise ValueError('parsed incorrectly: %s' % (parsed,))
     return parsed
