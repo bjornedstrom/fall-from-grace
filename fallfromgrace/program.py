@@ -122,7 +122,9 @@ class Configuration(object):
             raise ConfigException('failed to compile cmdline %r: %s' % (cmdline, e))
 
         for trigger, action in monitor_conf['actions'].iteritems():
-            if action not in ['term', 'kill']:
+            if action in ['term', 'kill'] or action.startswith('exec'):
+                pass
+            else:
                 raise ConfigException('invalid action: %s' % action)
             try:
                 self.validate_trigger(trigger)
@@ -196,6 +198,11 @@ class FallFromGrace(object):
                         os.kill(pid, signal.SIGTERM)
                     elif action == 'kill':
                         os.kill(pid, signal.SIGKILL)
+                    # TODO (bjorn): Security implications!!!
+                    elif action.startswith('exec'):
+                        prog = action.split(' ', 1)[-1]
+                        log.info('executing %r', prog)
+                        os.system(prog)
                 except Exception, e:
                     log.warning('kill failed for %s with %s', pid, e)
 
