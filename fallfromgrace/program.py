@@ -160,6 +160,7 @@ class FallFromGrace(object):
         self.args = args
         self.running = True
         self.config = Configuration()
+        self.exec_state = {}
 
     def _read_conf(self):
         try:
@@ -173,6 +174,31 @@ class FallFromGrace(object):
         # TODO (bjorn): In the future we may be interested in a more
         # diverse set of variables.
         return process.get_memory_usage(pid)
+
+    def _exec_with_rate_limit(self, monitor, trigger, action):
+        exec_at, prog = action.split(' ', 1)
+        at = None
+        last = self.exec_state.get(prog, 0)
+
+        if '@' in exec_at:
+            exec_str, at = exec_at.split('@', 1)
+            # TODO (bjorn): Handle fixes (15m for example)
+            at = int(at)
+
+        run = False
+        if exec_at == 'exec':
+            run = True
+        elif at is not None:
+            if time.time() - last > at:
+                run = True
+
+        if run:
+            log.info('Monitor %s and %s hit, action: %s', monitor.name, trigger, action)
+
+            # TODO (bjorn): Security implications!!!
+            os.system(prog)
+
+            self.exec_state[prog] = time.time()
 
     def _act(self, pid, monitor):
         """Maybe do something with the process."""
@@ -192,18 +218,15 @@ class FallFromGrace(object):
                 log.error('failed to evaluate trigger %r: %s', trigger, e)
                 continue
             if eret:
-                log.info('Monitor %s and %s hit, action: %s', monitor.name, trigger, action)
+                if action in ['term', 'kill']:
+                    log.info('Monitor %s and %s hit, action: %s', monitor.name, trigger, action)
                 try:
                     if action == 'term':
                         os.kill(pid, signal.SIGTERM)
                     elif action == 'kill':
                         os.kill(pid, signal.SIGKILL)
-                    # TODO (bjorn): Security implications!!!
-                    # TODO (bjorn): Rate limiting.
                     elif action.startswith('exec'):
-                        prog = action.split(' ', 1)[-1]
-                        log.info('executing %r', prog)
-                        os.system(prog)
+                        self._exec_with_rate_limit(monitor, trigger, action)
                 except Exception, e:
                     log.warning('action failed for %s with %s', pid, e)
 
