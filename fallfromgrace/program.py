@@ -12,6 +12,7 @@ import time
 import yaml
 
 import fallfromgrace.number as number
+import fallfromgrace.parser_action as parser_action
 import fallfromgrace.parser_trigger as parser_trigger
 import fallfromgrace.process as process
 
@@ -52,6 +53,9 @@ class Trigger(object):
         except Exception, e:
             raise ConfigException('parse error %r: %s' % (expr, e))
 
+    def __str__(self):
+        return self.s
+
     def evaluate(self, env):
         # Set variables
         new = []
@@ -70,6 +74,67 @@ class Trigger(object):
             raise ConfigException('unknown trigger %s: %s' % (self.s, e))
 
         raise ConfigException('unknown trigger %s' % self.s)
+
+
+class Action(object):
+    def __init__(self, action_str):
+        self.action_str = action_str
+        self.action_list = parser_action.parse(action_str)
+
+        # TODO (bjorn): Have a global state instead of per-action?
+        self.exec_state = {}
+
+    def __str__(self):
+        return self.action_str
+
+    def action(self, pid, monitor, trigger):
+        what = self.action_list[0]
+
+        try:
+            if what == 'exec':
+                self._execute(pid, monitor, trigger)
+            elif what == 'kill':
+                self._signal(pid, monitor, trigger, signal.SIGKILL)
+            elif what == 'term':
+                self._signal(pid, monitor, trigger, signal.SIGTERM)
+        except Exception, e:
+            log.warning('action failed for %s with %s', pid, e)
+
+    def _execute(self, pid, monitor, trigger):
+        prog = self.action_list[-1]
+        state_key = '%s %s' % (monitor.name, prog)
+        at = None
+        last = self.exec_state.get(state_key, 0)
+
+        if '@' in self.action_list:
+            at = self.action_list[2]
+
+        run = False
+        if at is None:
+            run = True
+        elif at is not None:
+            if time.time() - last > at:
+                run = True
+
+        if run:
+            log.info('Monitor %s and %s hit, action: %s', monitor.name, trigger, self.action_str)
+
+            prog_expand = prog
+            prog_expand = prog_expand.replace('$PID', str(pid))
+            prog_expand = prog_expand.replace('$NAME', monitor.name)
+
+            # TODO (bjorn): Security implications!!!
+            os.system(prog_expand)
+
+            self.exec_state[state_key] = time.time()
+
+    def _signal(self, pid, monitor, trigger, sig):
+        log.info('Monitor %s and %s hit, action: %s', monitor.name, trigger, self.action_str)
+        try:
+            os.kill(pid, sig)
+        except Exception, e:
+            # Handle above
+            raise
 
 
 class Configuration(object):
@@ -135,7 +200,18 @@ class Configuration(object):
         m = Monitor()
         m.name = name
         m.cmdline = cmdline
-        m.actions = monitor_conf['actions']
+        m.actions = []
+        for trigger_str, action_str in monitor_conf['actions'].iteritems():
+            try:
+                trigger = Trigger(trigger_str)
+            except Exception, e:
+                raise ConfigException('failed to parse trigger %r: %s' % (trigger_str, e))
+            try:
+                action = Action(action_str)
+            except Exception, e:
+                raise ConfigException('failed to parse action %r: %s' % (action_str, e))
+
+            m.actions.append((trigger, action))
         return m
 
     def load_from_file(self):
@@ -161,7 +237,6 @@ class FallFromGrace(object):
         self.args = args
         self.running = True
         self.config = Configuration()
-        self.exec_state = {}
 
     def _read_conf(self):
         try:
@@ -176,36 +251,6 @@ class FallFromGrace(object):
         # diverse set of variables.
         return process.get_memory_usage(pid)
 
-    def _exec_with_rate_limit(self, pid, monitor, trigger, action):
-        exec_at, prog = action.split(' ', 1)
-        state_key = '%s %s' % (monitor.name, prog)
-        at = None
-        last = self.exec_state.get(state_key, 0)
-
-        if '@' in exec_at:
-            exec_str, at = exec_at.split('@', 1)
-            at = number.unfix(at, {'s': 1,
-                                   'm': 60,
-                                   'h': 60*60})
-
-        run = False
-        if exec_at == 'exec':
-            run = True
-        elif at is not None:
-            if time.time() - last > at:
-                run = True
-
-        if run:
-            log.info('Monitor %s and %s hit, action: %s', monitor.name, trigger, action)
-
-            prog_expand = prog.replace('$PID', str(pid))
-            prog_expand = prog_expand.replace('$NAME', monitor.name)
-
-            # TODO (bjorn): Security implications!!!
-            os.system(prog_expand)
-
-            self.exec_state[state_key] = time.time()
-
     def _act(self, pid, monitor):
         """Maybe do something with the process."""
 
@@ -217,24 +262,18 @@ class FallFromGrace(object):
             log.warning('failed to get environment for pid %s - %s', pid, e)
             return
 
-        for trigger, action in monitor.actions.iteritems():
+        for trigger, action in monitor.actions:
             try:
-                eret = Trigger(trigger).evaluate(env)
+                triggered = trigger.evaluate(env)
             except Exception, e:
                 log.error('failed to evaluate trigger %r: %s', trigger, e)
                 continue
-            if eret:
-                if action in ['term', 'kill']:
-                    log.info('Monitor %s and %s hit, action: %s', monitor.name, trigger, action)
+
+            if triggered:
                 try:
-                    if action == 'term':
-                        os.kill(pid, signal.SIGTERM)
-                    elif action == 'kill':
-                        os.kill(pid, signal.SIGKILL)
-                    elif action.startswith('exec'):
-                        self._exec_with_rate_limit(pid, monitor, trigger, action)
+                    action.action(pid, monitor, trigger)
                 except Exception, e:
-                    log.warning('action failed for %s with %s', pid, e)
+                    log.error('failed to evaluate action %r: %s', action, e)
 
     def _tick(self):
         # TODO (bjorn): Optimize
