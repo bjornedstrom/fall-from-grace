@@ -102,6 +102,11 @@ class Action(object):
         return self.action_str
 
     def action(self, pid, name):
+        """Perform this action on the given pid.
+
+        Will either succeed or log and error.
+        """
+
         what = self.action_list[0]
 
         try:
@@ -264,6 +269,10 @@ class FallFromGrace(object):
         self.running = True
         self.config = Configuration()
 
+        # TODO (bjorn): A little bit hacky, but aids with
+        # unit-testing.
+        self._testing = False
+
     def _read_conf(self):
         try:
             self.config.load_from_file()
@@ -324,6 +333,8 @@ class FallFromGrace(object):
                 self._tick()
             except Exception, e:
                 log.error('uncaught exception in main loop: %s', e)
+            if self._testing:
+                break
             time.sleep(self.SLEEP_TIME)
 
     def shutdown(self, *args):

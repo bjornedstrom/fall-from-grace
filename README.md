@@ -33,6 +33,7 @@ The program depends on:
 - `daemon` ([python-daemon](http://pypi.python.org/pypi/python-daemon/)).
 - `yaml` ([PyYaml](http://pyyaml.org/)).
 - `ply` ([ply](http://www.dabeaz.com/ply/)).
+- `mock` ([Mock](http://www.voidspace.org.uk/python/mock/) for unit testing).
 
 All of the above projects have Debian packages, see `debian/control` for names.
 

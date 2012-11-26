@@ -4,6 +4,7 @@
 # See LICENSE for details.
 
 import logging
+import mock
 import signal
 import unittest
 
@@ -137,6 +138,60 @@ conkeror:
         self.assertEquals(('exec', 'testprogram 31337'), action._did)
 
         self.assertRaises(Exception, lambda: MockAction('fexec @ 1h testprogram $PID'))
+
+
+class FallFromGraceProgramTest(unittest.TestCase):
+    def setUp(self):
+        class MockedFFG(ffg.FallFromGrace):
+            SLEEP_TIME = 1
+
+            def _read_conf(self):
+                self.config.load("""conkeror:
+  cmdline: xulrunner-bin .*conkeror
+  actions:
+    rmem > 1g: term
+
+firefox:
+  cmdline: firefox$
+  actions:
+    rmem > 700m: exec@60s notify-send "$NAME ($PID) is using too much ram"
+    rmem > 900m: term
+""")
+
+        self.grace = MockedFFG(None, None)
+        self.grace._testing = True
+
+    @mock.patch('os.kill')
+    @mock.patch('subprocess.call')
+    @mock.patch('fallfromgrace.process.get_cmdline')
+    @mock.patch('fallfromgrace.process.get_pids')
+    @mock.patch('fallfromgrace.process.get_memory_usage')
+    def test_program(self, get_memory_usage, get_pids, get_cmdline, call, kill):
+        get_memory_usage.return_value = {'rmem': 300*1024*1024,
+                                         'vmem': 300*1024*1024}
+        get_pids.return_value = [1220]
+        get_cmdline.return_value = 'foo'
+
+        self.grace.run()
+
+        self.assertEquals(False, call.called)
+        self.assertEquals(False, kill.called)
+
+        get_cmdline.return_value = 'firefox'
+        get_memory_usage.return_value = {'rmem': 800*1024*1024,
+                                         'vmem': 300*1024*1024}
+
+        self.grace.run()
+
+        call.assert_called_with('notify-send "firefox (1220) is using too much ram"', shell=True)
+
+        get_memory_usage.return_value = {'rmem': 950*1024*1024,
+                                         'vmem': 300*1024*1024}
+
+        self.grace.run()
+
+        kill.assert_called_with(1220, signal.SIGTERM)
+
 
 
 if __name__ == '__main__':
