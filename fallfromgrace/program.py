@@ -101,22 +101,22 @@ class Action(object):
     def __str__(self):
         return self.action_str
 
-    def action(self, pid, monitor, trigger):
+    def action(self, pid, name):
         what = self.action_list[0]
 
         try:
             if what == 'exec':
-                self._execute(pid, monitor, trigger)
+                self._execute(pid, name)
             elif what == 'kill':
-                self._signal(pid, monitor, trigger, signal.SIGKILL)
+                self._signal(pid, name, signal.SIGKILL)
             elif what == 'term':
-                self._signal(pid, monitor, trigger, signal.SIGTERM)
+                self._signal(pid, name, signal.SIGTERM)
         except Exception, e:
             log.warning('action failed for %s with %s', pid, e)
 
-    def _execute(self, pid, monitor, trigger):
+    def _execute(self, pid, name):
         prog = self.action_list[-1]
-        state_key = '%s %s' % (monitor.name, prog)
+        state_key = '%s %s' % (name, prog)
         at = None
         last = self.exec_state.get(state_key, 0)
 
@@ -131,18 +131,15 @@ class Action(object):
                 run = True
 
         if run:
-            log.info('Monitor %s and %s hit, action: %s', monitor.name, trigger, self.action_str)
-
             prog_expand = prog
             prog_expand = prog_expand.replace('$PID', str(pid))
-            prog_expand = prog_expand.replace('$NAME', monitor.name)
+            prog_expand = prog_expand.replace('$NAME', name)
 
             self._do_exec(prog_expand)
 
             self.exec_state[state_key] = time.time()
 
-    def _signal(self, pid, monitor, trigger, sig):
-        log.info('Monitor %s and %s hit, action: %s', monitor.name, trigger, self.action_str)
+    def _signal(self, pid, name, sig):
         try:
             self._do_signal(pid, sig)
         except Exception, e:
@@ -300,9 +297,11 @@ class FallFromGrace(object):
 
             if triggered:
                 try:
-                    action.action(pid, monitor, trigger)
+                    action.action(pid, monitor.name)
+
+                    log.info('Monitor %s and %s hit, action: %s', monitor.name, trigger, action)
                 except Exception, e:
-                    log.error('failed to evaluate action %r: %s', action, e)
+                    log.error('failed to evaluate action %s: %s', action, e)
 
     def _tick(self):
         # TODO (bjorn): Optimize

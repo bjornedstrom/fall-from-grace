@@ -106,34 +106,34 @@ conkeror:
         monitor = ffg.Monitor()
         monitor.name = 'foo'
         action = MockAction('term')
-        action.action(0, monitor, 'bar')
+        action.action(0, 'bar')
         self.assertEquals(('signal', 0, signal.SIGTERM), action._did)
 
         action = MockAction('kill')
-        action.action(31337, monitor, 'bar')
+        action.action(31337, 'bar')
         self.assertEquals(('signal', 31337, signal.SIGKILL), action._did)
 
         action = MockAction('exec testprogram')
-        action.action(31337, monitor, 'bar')
+        action.action(31337, 'bar')
         self.assertEquals(('exec', 'testprogram'), action._did)
 
         action = MockAction('exec testprogram $PID')
-        action.action(31337, monitor, 'bar')
+        action.action(31337, 'bar')
         self.assertEquals(('exec', 'testprogram 31337'), action._did)
 
         action = MockAction('exec testprogram $NAME')
-        action.action(31337, monitor, 'bar')
-        self.assertEquals(('exec', 'testprogram foo'), action._did)
+        action.action(31337, 'bar')
+        self.assertEquals(('exec', 'testprogram bar'), action._did)
 
         action = MockAction('exec@2m testprogram $PID')
-        action.action(31337, monitor, 'bar')
+        action.action(31337, 'bar')
         self.assertEquals(('exec', 'testprogram 31337'), action._did)
         action._did = None
-        action.action(31337, monitor, 'bar')
+        action.action(31337, 'bar')
         self.assertEquals(None, action._did)
 
         action = MockAction('exec @ 1h testprogram $PID')
-        action.action(31337, monitor, 'bar')
+        action.action(31337, 'bar')
         self.assertEquals(('exec', 'testprogram 31337'), action._did)
 
         self.assertRaises(Exception, lambda: MockAction('fexec @ 1h testprogram $PID'))
