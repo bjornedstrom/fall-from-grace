@@ -8,6 +8,7 @@ import operator
 import os
 import re
 import signal
+import subprocess
 import time
 import yaml
 
@@ -152,7 +153,7 @@ class Action(object):
         """Wrapper for unit testing."""
 
         # TODO (bjorn): Security implications!!!
-        os.system(prog)
+        subprocess.call(prog, shell=True)
 
     def _do_signal(self, pid, sig):
         """Wrapper for unit testing."""
