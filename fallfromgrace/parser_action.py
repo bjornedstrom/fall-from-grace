@@ -20,7 +20,7 @@ t_EXEC = r'exec'
 t_PROGRAM = r'.+'
 
 def t_NUMBER(t):
-    r'\d+[smh]?'
+    r'[0-9\.]+[smh]?'
     try:
         t.value = number.unfix(t.value, {
                 's': 1,

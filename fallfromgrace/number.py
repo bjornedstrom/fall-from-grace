@@ -22,7 +22,7 @@ def unfix(num, fixes):
         if fix is not None:
             mul = fixes.get(fix.lower(), 1)
 
-        return int(num) * mul
+        return int(float(num) * mul + 0.5)
     except Exception, e:
         raise ValueError(str(e))
 

@@ -19,7 +19,7 @@ t_OP1 = r'(<|>)'
 t_OP2 = r'(<=|>=|==)'
 
 def t_NUMBER(t):
-    r'\d+[kmgKMG]?'
+    r'[0-9\.]+[kmgKMG]?'
     try:
         t.value = number.unfix(t.value, {
                 'k': 1024,

@@ -96,6 +96,7 @@ conkeror:
         self.assertEquals(1, ffg.Trigger('1 < rmem').expr[0])
         self.assertEquals(234, ffg.Trigger('234 < rmem').expr[0])
         self.assertEquals(2048, ffg.Trigger('2k < rmem').expr[0])
+        self.assertEquals(2253, ffg.Trigger('2.2k < rmem').expr[0])
         self.assertEquals(123*1024*1024, ffg.Trigger('123m < rmem').expr[0])
         self.assertEquals(123*1024*1024, ffg.Trigger('123M < rmem').expr[0])
 
