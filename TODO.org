@@ -1,0 +1,11 @@
+fall-from-grace
+
+* TODO Handle SIGSTOP better
+Say we have the rule
+
+stop @ 10m
+
+Then we CONT after 9 minutes and 50 seconds. Then fall-from-grace will
+STOP again after 10 seconds. Annoying!
+
+Perhaps have a background thread to keep track of this?
