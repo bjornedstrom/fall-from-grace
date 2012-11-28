@@ -74,12 +74,14 @@ Here are some examples of valid actions:
 
     term
     kill
+    stop @ 10m
     exec logger "program is using too much ram"
     exec logger "$NAME ($PID) is using too much ram"
     exec @ 1h logger "$NAME ($PID) is using too much ram"
 
-The last form (`exec @ TIME`) means the program will be run at most
-once per hour.
+The last form (`exec @ TIME`) means the program will be run at most once per hour.
+
+SIGSTOP always has the form `stop @ TIME` to give the user time to CONT and then act accordingly.
 
 ## Administration
 
