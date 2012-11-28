@@ -35,6 +35,18 @@ conkeror:
 
         self.assertEquals('conkeror', config.monitor[0].name)
 
+    def test_config_sigstop_success(self):
+        config = ffg.Configuration()
+
+        config.load("""# for conkeror
+conkeror:
+  cmdline: xulrunner-bin .*conkeror
+  actions:
+    rmem > 1073741824: stop @ 2m
+""")
+
+        self.assertEquals(['stop', '@', 120], config.monitor[0].actions[0][1].action_list)
+
     def test_config_fail(self):
         config = ffg.Configuration()
 
@@ -157,6 +169,11 @@ firefox:
   actions:
     rmem > 700m: exec@60s notify-send "$NAME ($PID) is using too much ram"
     rmem > 900m: term
+
+firefox2:
+  cmdline: firefox2$
+  actions:
+    rmem > 1.2g: stop @ 2m
 """)
 
         self.grace = MockedFFG(None, None)
@@ -186,12 +203,32 @@ firefox:
 
         call.assert_called_with('notify-send "firefox (1220) is using too much ram"', shell=True)
 
+        # new test
         get_memory_usage.return_value = {'rmem': 950*1024*1024,
                                          'vmem': 300*1024*1024}
 
         self.grace.run()
 
         kill.assert_called_with(1220, signal.SIGTERM)
+
+        # new test
+        get_pids.return_value = [4443]
+        get_cmdline.return_value = 'firefox2'
+        get_memory_usage.return_value = {'rmem': 1500*1024*1024,
+                                         'vmem': 300*1024*1024}
+
+        self.grace.run()
+
+        kill.assert_called_with(4443, signal.SIGSTOP)
+
+        # new test
+        kill.called = False
+        call.called = False
+
+        self.grace._tick()
+
+        self.assertEquals(False, kill.called)
+        self.assertEquals(False, call.called)
 
 
 

@@ -116,6 +116,8 @@ class Action(object):
                 self._signal(pid, name, signal.SIGKILL)
             elif what == 'term':
                 self._signal(pid, name, signal.SIGTERM)
+            elif what == 'stop':
+                self._signal(pid, name, signal.SIGSTOP)
         except Exception, e:
             log.warning('action failed for %s with %s', pid, e)
 
@@ -145,11 +147,28 @@ class Action(object):
             self.exec_state[state_key] = time.time()
 
     def _signal(self, pid, name, sig):
-        try:
-            self._do_signal(pid, sig)
-        except Exception, e:
-            # Handle above
-            raise
+        state_key = '%s %s' % (name, sig)
+        at = None
+        last = self.exec_state.get(state_key, 0)
+
+        if '@' in self.action_list:
+            at = self.action_list[2]
+
+        run = False
+        if at is None:
+            run = True
+        elif at is not None:
+            if time.time() - last > at:
+                run = True
+
+        if run:
+            try:
+                self._do_signal(pid, sig)
+
+                self.exec_state[state_key] = time.time()
+            except Exception, e:
+                # Handle above
+                raise
 
     def _do_exec(self, prog):
         """Wrapper for unit testing."""

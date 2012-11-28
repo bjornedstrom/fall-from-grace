@@ -11,10 +11,11 @@ import fallfromgrace.number as number
 
 log = logging.getLogger('fall-from-grace')
 
-tokens = ('TERM', 'KILL', 'EXEC', 'AT', 'NUMBER', 'PROGRAM')
+tokens = ('TERM', 'KILL', 'STOP', 'EXEC', 'AT', 'NUMBER', 'PROGRAM')
 
 t_TERM = r'term'
 t_KILL = r'kill'
+t_STOP = r'stop'
 t_AT = r'[@]'
 t_EXEC = r'exec'
 t_PROGRAM = r'.+'
@@ -55,6 +56,7 @@ def p_statement_expr(t):
 def p_expression_action(t):
     '''expression : TERM
                   | KILL
+                  | STOP AT NUMBER
                   | EXEC AT NUMBER PROGRAM
                   | EXEC PROGRAM'''
     t[0] = t[1:]
