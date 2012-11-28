@@ -177,7 +177,7 @@ class Configuration(object):
 
     def __init__(self):
         # TODO (bjorn): Encapsulate this?
-        self.monitor = None
+        self.monitor = []
 
     def validate_trigger(self, trigger):
         trig = Trigger(trigger)
