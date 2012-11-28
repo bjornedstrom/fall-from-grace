@@ -183,6 +183,9 @@ class Configuration(object):
         trig = Trigger(trigger)
         trig.evaluate({'rmem': 0, 'vmem': 0})
 
+    def validate_action(self, action):
+        action = Action(action)
+
     def load(self, yaml_str):
         """Read config yaml from the string given."""
 
@@ -219,9 +222,9 @@ class Configuration(object):
             raise ConfigException('failed to compile cmdline %r: %s' % (cmdline, e))
 
         for trigger, action in monitor_conf['actions'].iteritems():
-            if action in ['term', 'kill'] or action.startswith('exec'):
-                pass
-            else:
+            try:
+                self.validate_action(action)
+            except Exception, e:
                 raise ConfigException('invalid action: %s' % action)
             try:
                 self.validate_trigger(trigger)
