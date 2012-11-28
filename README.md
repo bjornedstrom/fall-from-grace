@@ -68,6 +68,8 @@ Here are some examples of valid triggers:
     vmem > 900m
     rmem > 2097152
 
+Where `rmem` and `vmem` means residential and virtual memory, respectively.
+
 ## Actions
 
 Here are some examples of valid actions:
