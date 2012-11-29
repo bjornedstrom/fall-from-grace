@@ -9,7 +9,3 @@ Then we CONT after 9 minutes and 50 seconds. Then fall-from-grace will
 STOP again after 10 seconds. Annoying!
 
 Perhaps have a background thread to keep track of this?
-
-* TODO Child processes
-Support having a monitor also check the child processes. Can be
-useful.

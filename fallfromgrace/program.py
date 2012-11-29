@@ -40,6 +40,9 @@ class Monitor(object):
         # [(Trigger, Action)]: list of tuples (trigger, action).
         self.actions = None
 
+        # check children?
+        self.check_children = False
+
 
 class Trigger(object):
     """Class implements safe evaluation of some expressions given an
@@ -254,10 +257,20 @@ class Configuration(object):
             except Exception, e:
                 raise ConfigException('invalid trigger: %s - %s' % (trigger, e))
 
+        check_children = None
+        if 'children' in monitor_conf:
+            check_children = monitor_conf['children']
+
+            if check_children not in (True, False):
+                raise ConfigException('invalid value for "children", must be boolean')
+
         m = Monitor()
         m.name = name
         m.cmdline = cmdline
         m.actions = []
+        if check_children is not None:
+            m.check_children = check_children
+
         for trigger_str, action_str in monitor_conf['actions'].iteritems():
             try:
                 trigger = Trigger(trigger_str)
@@ -340,14 +353,19 @@ class FallFromGrace(object):
                     log.error('failed to evaluate action %s: %s', action, e)
 
     def _tick(self):
-        # TODO (bjorn): Optimize
-        for pid in process.get_pids():
-            cmdline = process.get_cmdline(pid)
-            if cmdline is None:
-                continue
+        tree, cmdlines = process.get_snapshot()
+        for pid, cmdline in cmdlines.iteritems():
             for monitor in self.config.monitor:
                 if monitor.cmdline.search(cmdline):
                     self._act(pid, monitor)
+
+                    if monitor.check_children:
+                        try:
+                            cpids = process.walk_children(tree, pid)
+                        except Exception, e:
+                            log.warning('failed to get children for pid %s: %s', pid, e)
+                        for cpid in cpids:
+                            self._act(cpid, monitor)
 
     def run(self):
         """fall-from-grace main loop."""

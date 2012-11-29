@@ -53,6 +53,7 @@ fall-from-grace is configured in the single configuration file `/etc/fall-from-g
 
     conkeror:
       cmdline: xulrunner-bin .*conkeror
+      children: 1 # optionally check all children, defaults to false
       actions:
         rmem > 500m: exec notify-send "conkeror is using too much ram"
         rmem > 900m: term

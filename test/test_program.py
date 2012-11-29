@@ -34,6 +34,7 @@ conkeror:
 """)
 
         self.assertEquals('conkeror', config.monitor[0].name)
+        self.assertEquals(False, config.monitor[0].check_children)
 
     def test_config_sigstop_success(self):
         config = ffg.Configuration()
@@ -46,6 +47,19 @@ conkeror:
 """)
 
         self.assertEquals(['stop', '@', 120], config.monitor[0].actions[0][1].action_list)
+
+    def test_config_children_success(self):
+        config = ffg.Configuration()
+
+        config.load("""# for conkeror
+conkeror:
+  cmdline: xulrunner-bin .*conkeror
+  children: True
+  actions:
+    rmem > 1073741824: term
+""")
+
+        self.assertEquals(True, config.monitor[0].check_children)
 
     def test_config_fail(self):
         config = ffg.Configuration()
@@ -172,6 +186,7 @@ firefox:
 
 firefox2:
   cmdline: firefox2$
+  children: 1
   actions:
     rmem > 1.2g: stop @ 2m
 """)
@@ -181,21 +196,19 @@ firefox2:
 
     @mock.patch('os.kill')
     @mock.patch('subprocess.call')
-    @mock.patch('fallfromgrace.process.get_cmdline')
-    @mock.patch('fallfromgrace.process.get_pids')
+    @mock.patch('fallfromgrace.process.get_snapshot')
     @mock.patch('fallfromgrace.process.get_memory_usage')
-    def test_program(self, get_memory_usage, get_pids, get_cmdline, call, kill):
+    def test_program(self, get_memory_usage, get_snapshot, call, kill):
         get_memory_usage.return_value = {'rmem': 300*1024*1024,
                                          'vmem': 300*1024*1024}
-        get_pids.return_value = [1220]
-        get_cmdline.return_value = 'foo'
+        get_snapshot.return_value = {1220: set()}, {1220: 'foo'}
 
         self.grace.run()
 
         self.assertEquals(False, call.called)
         self.assertEquals(False, kill.called)
 
-        get_cmdline.return_value = 'firefox'
+        get_snapshot.return_value = {1220: set()}, {1220: 'firefox'}
         get_memory_usage.return_value = {'rmem': 800*1024*1024,
                                          'vmem': 300*1024*1024}
 
@@ -212,8 +225,7 @@ firefox2:
         kill.assert_called_with(1220, signal.SIGTERM)
 
         # new test
-        get_pids.return_value = [4443]
-        get_cmdline.return_value = 'firefox2'
+        get_snapshot.return_value = {4443: set()}, {4443: 'firefox2'}
         get_memory_usage.return_value = {'rmem': 1500*1024*1024,
                                          'vmem': 300*1024*1024}
 
@@ -230,6 +242,29 @@ firefox2:
         self.assertEquals(False, kill.called)
         self.assertEquals(False, call.called)
 
+    # TODO (bjorn): Below test is very hacky
+    @mock.patch('os.kill')
+    @mock.patch('fallfromgrace.process.get_snapshot')
+    def test_children(self, get_snapshot, kill):
+        get_snapshot.return_value = {4443: set([5555]), 5555: set()}, {4443: 'firefox2', 5555: 'subproc'}
+
+        get_memory_usage_orig = ffg.process.get_memory_usage
+
+        def fake_memusage(pid):
+            if pid == 4443:
+                return {'rmem': 300*1024*1024,
+                        'vmem': 300*1024*1024}
+            elif pid == 5555:
+                return {'rmem': 1500*1024*1024,
+                        'vmem': 300*1024*1024}
+        ffg.process.get_memory_usage = fake_memusage
+
+        try:
+            self.grace.run()
+
+            kill.assert_called_with(5555, signal.SIGSTOP)
+        finally:
+            ffg.process.get_memory_usage = get_memory_usage_orig
 
 
 if __name__ == '__main__':
