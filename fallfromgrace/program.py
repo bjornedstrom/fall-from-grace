@@ -111,13 +111,13 @@ class Action(object):
 
         try:
             if what == 'exec':
-                self._execute(pid, name)
+                return self._execute(pid, name)
             elif what == 'kill':
-                self._signal(pid, name, signal.SIGKILL)
+                return self._signal(pid, name, signal.SIGKILL)
             elif what == 'term':
-                self._signal(pid, name, signal.SIGTERM)
+                return self._signal(pid, name, signal.SIGTERM)
             elif what == 'stop':
-                self._signal(pid, name, signal.SIGSTOP)
+                return self._signal(pid, name, signal.SIGSTOP)
         except Exception, e:
             log.warning('action failed for %s with %s', pid, e)
 
@@ -146,6 +146,8 @@ class Action(object):
 
             self.exec_state[state_key] = time.time()
 
+        return run
+
     def _signal(self, pid, name, sig):
         state_key = '%s %s' % (name, sig)
         at = None
@@ -169,6 +171,8 @@ class Action(object):
             except Exception, e:
                 # Handle above
                 raise
+
+        return run
 
     def _do_exec(self, prog):
         """Wrapper for unit testing."""
