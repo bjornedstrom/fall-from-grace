@@ -332,9 +332,10 @@ class FallFromGrace(object):
 
             if triggered:
                 try:
-                    action.action(pid, monitor.name)
+                    did_action = action.action(pid, monitor.name)
 
-                    log.info('Monitor %s and %s hit, action: %s', monitor.name, trigger, action)
+                    if did_action:
+                        log.info('Monitor %s and %s hit, action: %s', monitor.name, trigger, action)
                 except Exception, e:
                     log.error('failed to evaluate action %s: %s', action, e)
 
