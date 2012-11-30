@@ -1,17 +1,22 @@
-# fall-from-grace
+# fall-from-grace - a non-intrusive userspace process supervisor
 0.1.0-rc2, November 2012
 
-`fall-from-grace` is a non-intrusive userspace process supervisor.
-
-It runs on the side of existing processes, rather than below them (in contrast with, for example, `supervisord` or `daemontools`).
+`fall-from-grace` is a userspace daemon that monitors processes for certain triggers and acts on those. For example, it can monitor your web browser and kill it if it uses too much memory. It runs on the side of existing processes, rather than below them (in contrast with, for example, `supervisord` or `daemontools`).
 
 This software is currently very early work in progress.
 
-### Rationale
+## Features
 
-Judge, jury and executioner specifically designed to gracefully terminate non-service processes (web browsers, media players...) leaking memory. Can easily be adapted for other triggers.
-
-It is written because I have not had great success with the standard unix facilities, such as setting resource limits, or tweaking the OOM killer (see my other project [oomtools](https://github.com/bjornedstrom/oomtools)).
+* Can monitor specific processes by regular expression on program command lines.
+* Can monitor child processes, recursively.
+* Can trigger on memory usage, virtual and residential.
+* Actions include some reasonable signals: SIGSTOP (very useful to suspend a process leaking memory), SIGTERM, SIGKILL.
+* Can execute a program on trigger, with some variable expansions (see below).
+* Actions can be rate limited, for example the action runs at most once per hour.
+* Simple YAML and rules based configuration language.
+* Behaves as expected from an administrative standpoint (has an init.d script, SIGHUP reloads config file etc, syslogs interesting events).
+* Written in Python makes it easy to extend for your need.
+* Reasonably small memory footprint and low memory usage.
 
 ## Install & Run
 
@@ -92,6 +97,8 @@ Config can be reloaded by `init.d` or by sending SIGHUP.
 
 `fall-from-grace` will log interesting events to syslog.
 
-## License
+## About & License
 
 This software is written by Björn Edström 2012. See LICENSE for details.
+
+The author wrote the software because he did not have great success with the standard Unix facilities, such as setting resource limits, or tweaking the OOM killer (see the authors other project [oomtools](https://github.com/bjornedstrom/oomtools)).
