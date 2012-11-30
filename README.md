@@ -5,7 +5,7 @@
 
 This software is currently very early work in progress.
 
-## Features
+### Features
 
 * Can monitor specific processes by regular expression on program command lines.
 * Can monitor child processes, recursively.
@@ -14,9 +14,11 @@ This software is currently very early work in progress.
 * Can execute a program on trigger, with some variable expansions (see below).
 * Actions can be rate limited, for example the action runs at most once per hour.
 * Simple YAML and rules based configuration language.
-* Behaves as expected from an administrative standpoint (has an init.d script, SIGHUP reloads config file etc, syslogs interesting events).
+* Adhers to reasonable standards how a daemon should behave (SIGHUP reloads config file, interesting events are sysloged).
 * Written in Python makes it easy to extend for your need.
-* Reasonably small memory footprint and low memory usage.
+* Reasonably small memory footprint and low resource usage.
+* init.d script provided.
+* Debian packaged.
 
 ## Install & Run
 
@@ -63,7 +65,7 @@ fall-from-grace is configured in the single configuration file `/etc/fall-from-g
         rmem > 500m: exec notify-send "conkeror is using too much ram"
         rmem > 900m: term
 
-The first line (conkeror) is a single human-readable name for the process, used for logging. `cmdline` is a regex that will match on the process cmdline. `actions` is a list of triggers and actions to take.
+The first line (`conkeror`) is a single human-readable name for the process, used for logging. `cmdline` is a regex that will match on the process cmdline. `actions` is a list of triggers and actions to take.
 
 ### Triggers
 
