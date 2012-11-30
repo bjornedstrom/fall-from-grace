@@ -7,13 +7,13 @@ It runs on the side of existing processes, rather than below them (in contrast w
 
 This software is currently very early work in progress.
 
-## Rationale
+### Rationale
 
 Judge, jury and executioner specifically designed to gracefully terminate non-service processes (web browsers, media players...) leaking memory. Can easily be adapted for other triggers.
 
 It is written because I have not had great success with the standard unix facilities, such as setting resource limits, or tweaking the OOM killer (see my other project [oomtools](https://github.com/bjornedstrom/oomtools)).
 
-# Install & Run
+## Install & Run
 
 If you are on a Debian based distribution, it is easiest to just build and install the Debian package:
 
@@ -25,7 +25,7 @@ Otherwise, you can;
 
 And then install `init.d` script `debian/init` by hand.
 
-## Dependencies
+### Dependencies
 
 The program depends on:
 
@@ -37,7 +37,7 @@ The program depends on:
 
 All of the above projects have Debian packages, see `debian/control` for names.
 
-## Run
+### Run
 
 For development, run neat:
 
@@ -45,7 +45,7 @@ For development, run neat:
 
 For normal usage, control with `init.d`.
 
-# Configuration & Administration
+## Configuration & Administration
 
 NOTE: This config format is much likely to change during development.
 
@@ -60,7 +60,7 @@ fall-from-grace is configured in the single configuration file `/etc/fall-from-g
 
 The first line (conkeror) is a single human-readable name for the process, used for logging. `cmdline` is a regex that will match on the process cmdline. `actions` is a list of triggers and actions to take.
 
-## Triggers
+### Triggers
 
 Here are some examples of valid triggers:
 
@@ -71,7 +71,7 @@ Here are some examples of valid triggers:
 
 Where `rmem` and `vmem` means residential and virtual memory, respectively.
 
-## Actions
+### Actions
 
 Here are some examples of valid actions:
 
@@ -86,12 +86,12 @@ The last form (`exec @ TIME`) means the program will be run at most once per hou
 
 SIGSTOP always has the form `stop @ TIME` to give the user time to CONT and then act accordingly.
 
-## Administration
+### Administration
 
 Config can be reloaded by `init.d` or by sending SIGHUP.
 
 `fall-from-grace` will log interesting events to syslog.
 
-# License
+## License
 
 This software is written by Björn Edström 2012. See LICENSE for details.
