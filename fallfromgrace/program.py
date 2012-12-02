@@ -3,6 +3,7 @@
 # Copyright (c) 2012 Björn Edström <be@bjrn.se>
 # See LICENSE for details.
 
+import errno
 import logging
 import operator
 import os
@@ -12,6 +13,7 @@ import subprocess
 import time
 import yaml
 
+import fallfromgrace.config
 import fallfromgrace.number as number
 import fallfromgrace.parser_action as parser_action
 import fallfromgrace.parser_trigger as parser_trigger
@@ -215,12 +217,7 @@ class Configuration(object):
     def load(self, yaml_str):
         """Read config yaml from the string given."""
 
-        try:
-            conf = yaml.load(yaml_str)
-        except Exception, e:
-            log.error('failed to read config file: %s', e)
-            return
-
+        conf = yaml.load(yaml_str)
         monitor = []
 
         for name, monitor_conf in conf.iteritems():
@@ -228,6 +225,8 @@ class Configuration(object):
             monitor.append(m)
 
         # success
+        log.info('successfully read config file: monitors %s', ' '.join(m.name for m in monitor))
+
         self.monitor = monitor
 
     def load_fragment(self, name, monitor_conf):
@@ -288,9 +287,31 @@ class Configuration(object):
         """Helper that reads the file in /etc."""
 
         try:
-            self.load(file('/etc/fall-from-grace.conf', 'r').read())
+            conf_data = ''
+            try:
+                conf_data = file('/etc/fall-from-grace.conf', 'r').read()
+            except:
+                pass
+
+            dot_d = ''
+            try:
+                dot_d = fallfromgrace.config.read_dot_d('/etc/fall-from-grace.d')
+            except OSError, e:
+                if e.errno == errno.ENOENT:
+                    pass
+            except:
+                raise
+
+            conf_cat = '\n'.join([conf_data, dot_d])
+            if not conf_cat.strip():
+                raise IOError(errno.ENOENT, '/etc/fall-from-grace.conf or /etc/fall-from-grace.d does not exist')
+
+            self.load(conf_cat)
         except Exception, e:
             log.error('failed to read config file: %s', e)
+            if self.monitor:
+                log.info('using monitors from already read config file: monitors %s',
+                         ' '.join(m.name for m in self.monitor))
             return
 
 
@@ -367,6 +388,10 @@ class FallFromGrace(object):
                             log.warning('failed to get children for pid %s: %s', pid, e)
                         for cpid in cpids:
                             self._act(cpid, monitor)
+
+                    # TODO (bjorn): We may want to do this (only a
+                    # single monitor will be used on a pid)
+                    #continue
 
     def run(self):
         """fall-from-grace main loop."""
