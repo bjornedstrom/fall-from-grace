@@ -56,11 +56,12 @@ For normal usage, control with `init.d`.
 
 NOTE: This config format is much likely to change during development.
 
-fall-from-grace is configured in the single configuration file `/etc/fall-from-grace.conf`. Each process to monitor has a YAML fragment, as below:
+fall-from-grace is (typically) configured in the single configuration file `/etc/fall-from-grace.conf`. Each process to monitor has a YAML fragment, as below:
 
     conkeror:
       cmdline: xulrunner-bin .*conkeror
       children: 1 # optionally check all children, defaults to false
+      final: 1 # see below for details
       actions:
         rmem > 500m: exec notify-send "conkeror is using too much ram"
         rmem > 900m: term
@@ -98,6 +99,12 @@ SIGSTOP always has the form `stop @ TIME` to give the user time to CONT and then
 Config can be reloaded by `init.d` or by sending SIGHUP.
 
 `fall-from-grace` will log interesting events to syslog.
+
+### Advanced configuration
+
+In addition to `/etc/fall-from-grace.conf`, the program will also pick up files, if they exist, from `/etc/fall-from-grace.d`. If both the .conf file exists and files in the dot-d directory exists, the result is concatenated with the .conf file first. The files in the dot-d directory follow the usual standards (files with a name of the form NN-foobar will appear higher in the concatenated result if NN is high).
+
+Note that fall-from-grace will actually read the resulting YAML string as an ordered dict, instead of an unordered. This is used so a monitor with high prio will be executed first. By default, all monitors that trigger on a certain pid will be executed in order, so you can have two monitors matching the same cmdline and both will be run. If this is undesirable, you can set the "final" keyword on a monitor fragment. In that case, subsequent monitors that could match the same cmdline will not be executed.
 
 ## About & License
 
