@@ -348,7 +348,8 @@ class FallFromGrace(object):
                     did_action = action.action(pid, monitor.name)
 
                     if did_action:
-                        log.info('Monitor %s and %s hit, action: %s', monitor.name, trigger, action)
+                        log.info('Monitor %s and %s hit on pid %s, action: %s',
+                                 monitor.name, pid, trigger, action)
                 except Exception, e:
                     log.error('failed to evaluate action %s: %s', action, e)
 
