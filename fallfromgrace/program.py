@@ -11,13 +11,13 @@ import re
 import signal
 import subprocess
 import time
-import yaml
 
 import fallfromgrace.config
 import fallfromgrace.number as number
 import fallfromgrace.parser_action as parser_action
 import fallfromgrace.parser_trigger as parser_trigger
 import fallfromgrace.process as process
+import fallfromgrace.orderedyaml as orderedyaml
 
 log = logging.getLogger('fall-from-grace')
 
@@ -44,6 +44,13 @@ class Monitor(object):
 
         # check children?
         self.check_children = False
+
+        # if this monitor triggers, do not consider other monitors.
+        self.final = False
+
+    def __repr__(self):
+        return '<Monitor name=%r cmdline=%r actions=%r check_children=%r final=%r>' % (
+            self.name, self.cmdline, self.actions, self.check_children, self.final)
 
 
 class Trigger(object):
@@ -217,7 +224,7 @@ class Configuration(object):
     def load(self, yaml_str):
         """Read config yaml from the string given."""
 
-        conf = yaml.load(yaml_str)
+        conf = orderedyaml.load(yaml_str)
         monitor = []
 
         for name, monitor_conf in conf.iteritems():
@@ -263,12 +270,21 @@ class Configuration(object):
             if check_children not in (True, False):
                 raise ConfigException('invalid value for "children", must be boolean')
 
+        final = None
+        if 'final' in monitor_conf:
+            final = monitor_conf['final']
+
+            if final not in (True, False):
+                raise ConfigException('invalid value for "final", must be boolean')
+
         m = Monitor()
         m.name = name
         m.cmdline = cmdline
         m.actions = []
         if check_children is not None:
             m.check_children = check_children
+        if final is not None:
+            m.final = final
 
         for trigger_str, action_str in monitor_conf['actions'].iteritems():
             try:
@@ -389,9 +405,8 @@ class FallFromGrace(object):
                         for cpid in cpids:
                             self._act(cpid, monitor)
 
-                    # TODO (bjorn): We may want to do this (only a
-                    # single monitor will be used on a pid)
-                    #continue
+                    if monitor.final:
+                        break
 
     def run(self):
         """fall-from-grace main loop."""

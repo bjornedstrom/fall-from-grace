@@ -61,6 +61,19 @@ conkeror:
 
         self.assertEquals(True, config.monitor[0].check_children)
 
+    def test_config_final_success(self):
+        config = ffg.Configuration()
+
+        config.load("""# for conkeror
+conkeror:
+  cmdline: xulrunner-bin .*conkeror
+  final: True
+  actions:
+    rmem > 1073741824: term
+""")
+
+        self.assertEquals(True, config.monitor[0].final)
+
     def test_config_fail(self):
         config = ffg.Configuration()
 
@@ -175,8 +188,15 @@ class FallFromGraceProgramTest(unittest.TestCase):
             def _read_conf(self):
                 self.config.load("""conkeror:
   cmdline: xulrunner-bin .*conkeror
+  final: 1
   actions:
     rmem > 1g: term
+
+conkeror2:
+  cmdline: xulrunner-bin .*conkeror
+  final: 1
+  actions:
+    rmem > 2g: kill
 
 firefox:
   cmdline: firefox$
@@ -241,6 +261,17 @@ firefox2:
 
         self.assertEquals(False, kill.called)
         self.assertEquals(False, call.called)
+
+        # test "final"
+        get_memory_usage.return_value = {'rmem': 2400*1024*1024,
+                                         'vmem': 300*1024*1024}
+        get_snapshot.return_value = {4443: set()}, {4443: 'xulrunner-bin /usr/share/conkeror'}
+        kill.called = False
+        call.called = False
+
+        self.grace.run()
+
+        kill.assert_called_with(4443, signal.SIGTERM)
 
     # TODO (bjorn): Below test is very hacky
     @mock.patch('os.kill')
