@@ -1,5 +1,5 @@
 # fall-from-grace - a non-intrusive userspace process supervisor
-0.1.0-rc2, November 2012
+0.1.0-rc3
 
 `fall-from-grace` is a userspace daemon that monitors processes for certain triggers and acts on those. For example, it can monitor your web browser and kill it if it uses too much memory. It runs on the side of existing processes, rather than below them (in contrast with, for example, `supervisord` or `daemontools`).
 

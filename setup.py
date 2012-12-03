@@ -4,7 +4,7 @@
 from distutils.core import setup
 
 setup(name='fall-from-grace',
-      version='0.1.0-rc2',
+      version='0.1.0-rc3',
       description='non-intrusive userspace process supervisor',
       author=u'Björn Edström',
       author_email='be@bjrn.se',
